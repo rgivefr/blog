@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1000.84" height="706.746" viewBox="0 0 1000.84 706.746">
+  <defs>
+    <linearGradient id="linear-gradient" x1="0.5" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#bbf485"/>
+      <stop offset="1" stop-color="#2d6939"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="0.5" x2="0.5" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#0690ef"/>
+      <stop offset="1" stop-color="#0836c5"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-3" x1="0.701" y1="0.355" x2="0.243" y2="0.877" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#aee57f"/>
+      <stop offset="0.389" stop-color="#2bd14d"/>
+      <stop offset="0.768" stop-color="#0d90e3"/>
+      <stop offset="1" stop-color="#35c2fb"/>
+    </linearGradient>
+    <filter id="Ellipse_11" x="695.889" y="89.399" width="239.104" height="243.477" filterUnits="userSpaceOnUse">
+      <feOffset dy="3" input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-opacity="0.161"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="Groupe_384" data-name="Groupe 384" transform="translate(-1148.518 -332.917)">
+    <g id="check" transform="translate(1148.518 1039.664) rotate(-90)">
+      <path id="back" d="M175.866,0a175.39,175.39,0,0,1,175.39,175.39v113s1.17,21.776,13.688,35.741,37.741,15.688,37.741,15.688L0,336.061.476,175.39A175.39,175.39,0,0,1,175.866,0Z" transform="translate(422.005 0) rotate(45)" fill="url(#linear-gradient)"/>
+      <path id="back-2" data-name="back" d="M175.39,0A175.39,175.39,0,0,1,350.78,175.39v113s1.17,21.776,13.688,35.741,37.741,15.688,37.741,15.688L.668,338,0,175.39A175.39,175.39,0,0,1,175.39,0Z" transform="translate(422.005 0.336) rotate(45)" fill="url(#linear-gradient-2)"/>
+      <path id="Tracé_677" data-name="Tracé 677" d="M830.606,299.952,502.266,622.909l-.167.164c-4.336,4.265-8.838,8.2-13.506,11.973C418.555,691.305,314.5,687.2,249.3,623.237c-1.168-1.148-2.168-2.3-3.336-3.445l-9.838-9.677s-97.9-94.066-157.564-152.836S0,377.862,0,377.862c70.037,65.281,180.6,64.132,249.133-3.444L401.38,224.667,577.807,51.3c69.537-68.4,183.263-68.4,252.8,0A174.27,174.27,0,0,1,830.606,299.952Z" transform="matrix(-0.017, 1, -1, -0.017, 689.727, 118.216)" fill="url(#linear-gradient-3)"/>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 1148.52, 332.92)" filter="url(#Ellipse_11)">
+      <ellipse id="Ellipse_11-2" data-name="Ellipse 11" cx="110.552" cy="112.739" rx="110.552" ry="112.739" transform="translate(704.89 95.4)" fill="#fff"/>
+    </g>
+  </g>
+</svg>

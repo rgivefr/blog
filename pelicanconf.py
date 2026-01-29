@@ -1,8 +1,8 @@
-AUTHOR = 'RGOODS Tech team'
-SITENAME = 'RGOODS Engineering'
-SITETITLE = 'RGOODS Engineering'
+AUTHOR = 'rgive tech team'
+SITENAME = 'rgive engineering'
+SITETITLE = 'rgive engineering'
 SITESUBTITLE = (
-    'We are RGOODS tech team.<br />'
+    'We are rgive tech team.<br />'
     'We build cool tools to help associations & NGOs raise more funds.<br />'
     'On this blog, we talk about Python/Django/Wagtail & VueJS.'
 )
@@ -12,7 +12,7 @@ PATH = "content"
 
 TIMEZONE = 'Europe/Paris'
 
-COPYRIGHT_NAME = 'RGOODS'
+COPYRIGHT_NAME = 'rgive'
 
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
@@ -28,8 +28,7 @@ LINKS = (
 
 # Social widget
 SOCIAL = (
-    ("instagram", "https://www.instagram.com/rgoods_official/"),
-    ("linkedin", "https://www.linkedin.com/company/rgoods/"),
+    ("linkedin", "https://www.linkedin.com/company/rgive/"),
     ('rss', '/feeds/all.atom.xml'),
 )
 
@@ -51,7 +50,7 @@ STATIC_PATHS = ['images']
 
 THEME = "themes/Flex"
 
-SITELOGO = "/images/logo.png"
+SITELOGO = "/images/logo.svg"
 FAVICON = "/images/favicon.ico"
 
 PLUGIN_PATHS = ["plugins"]
@@ -63,10 +62,10 @@ DEFAULT_LANG = "en"
 I18N_TEMPLATES_LANG = "en"
 I18N_SUBSITES = {
     'fr': {
-        'SITENAME': 'RGOODS Engineering',
-        'SITETITLE': 'RGOODS Engineering',
+        'SITENAME': SITENAME,
+        'SITETITLE': SITENAME,
         'SITESUBTITLE': (
-            "Nous sommes l'équipe tech RGOODS.<br />"
+            "Nous sommes l'équipe tech rgive.<br />"
             "Nous construisons des outils cool pour aider les associations et les ONGs à récolter plus de fonds.<br />"
             "Sur ce blog, nous parlons principalement de Python/Django/Wagtail & VueJS."
         ),
