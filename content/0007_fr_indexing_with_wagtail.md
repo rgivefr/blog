@@ -21,9 +21,9 @@ Sur une base dédiée à un seul client, une requête lente resterait un problè
 
 RGIVE utilise déjà Wagtail comme CMS et comme socle d'administration. Wagtail embarque un système d'indexation de recherche, [`wagtail.search`](https://docs.wagtail.org/en/stable/topics/search/index.html), conçu au départ pour chercher dans les pages du CMS, mais qui fonctionne sur n'importe quel modèle Django.
 
-L'utiliser plutôt qu'un moteur de recherche dédié (Elasticsearch par exemple) nous évite d'ajouter une dépendance : pas de nouveau service à déployer, à surveiller, à faire évoluer, ni de synchronisation à maintenir entre deux bases. C'est aussi un choix budgétaire assumé : Elasticsearch demande son propre cluster, ses propres ressources, et du temps d'administration système pour le faire tourner correctement en production. En restant sur PostgreSQL, on paie pour de la capacité qu'on a de toute façon, pas pour un second système à opérer et à surveiller. Accessoirement, ça évite aussi quelques cauchemars de 3 h du matin à nos administrateurs systèmes — eux aussi nous remercient.
+`wagtail.search` sait s'appuyer sur plusieurs backends, dont Elasticsearch. Nous avons choisi le backend d'indexation PostgreSQL de Wagtail. L'utiliser plutôt qu'un moteur de recherche dédié (Elasticsearch par exemple) nous évite d'ajouter une dépendance : pas de nouveau service à déployer, à surveiller, à faire évoluer, ni de synchronisation à maintenir entre deux bases. C'est aussi un choix budgétaire assumé : Elasticsearch demande son propre cluster, ses propres ressources, et du temps d'administration système pour le faire tourner correctement en production. En restant sur PostgreSQL, on paie pour de la capacité qu'on a de toute façon, pas pour un second système à opérer et à surveiller. Accessoirement, ça évite aussi quelques cauchemars de 3h du matin à nos administrateurs systèmes — eux aussi nous remercient.
 
-On a activé le backend PostgreSQL de Wagtail, qui s'appuie sur les fonctions de recherche plein texte natives de PostgreSQL (`tsvector`, index `GIN`). Pas de nouvelle infrastructure : la base de données qui fait déjà tourner l'application fait aussi tourner la recherche.
+Ce backend PostgreSQL de Wagtail s'appuie sur les fonctions de recherche plein texte natives de PostgreSQL (`tsvector`, index `GIN`). Pas de nouvelle infrastructure : la base de données qui fait déjà tourner l'application fait aussi tourner la recherche.
 
 Configuration :
 
@@ -83,13 +83,13 @@ Résultat : une recherche par email ou par nom passe directement par l'index Pos
 
 # Éviter de réindexer trois fois le même don
 
-Indexer nos paiements réglait le problème de lecture. Restait un problème symétrique, côté écriture : un don, chez nous, ne s'écrit pas en une seule fois. Le traitement d'un paiement le sauvegarde plusieurs fois — à la création, puis au fil des étapes de validation et de rattachement à une commande. En pratique, un même paiement est sauvegardé environ trois fois pendant son traitement.
+Indexer nos paiements réglait le problème de lecture. Restait un problème symétrique, côté écriture : un don, chez nous, ne s'écrit pas en une seule fois. Le traitement d'un paiement l'enregistre plusieurs fois — à la création, puis au fil des étapes de validation et de rattachement à une commande. En pratique, un même paiement est enregistré environ trois fois pendant son traitement.
 
-Par défaut, Wagtail réindexe un objet à chaque sauvegarde. Trois sauvegardes par don, ça fait trois réindexations pour le même objet. Sur un pic d'activité de plusieurs milliers de dons, par exemple pendant une grosse campagne, ça représente plusieurs milliers de réindexations superflues en quelques minutes — exactement au moment où la base partagée par toutes les associations est déjà la plus sollicitée.
+Par défaut, Wagtail réindexe un objet à chaque enregistrement. Trois enregistrements par don, ça fait trois réindexations pour le même objet. Sur un pic d'activité de plusieurs milliers de dons, par exemple pendant une grosse campagne, ça représente plusieurs milliers de réindexations superflues en quelques minutes — exactement au moment où la base partagée par toutes les associations est déjà la plus sollicitée.
 
 On a donc désactivé la réindexation automatique de Wagtail et construit notre propre mécanisme, sur deux mixins :
 
-- `IndexableMixin`, posé sur `Payment` et `Commitment`. Il coupe `search_auto_update`, ajoute un champ `needs_reindexing`, et le passe à `True` à la création ou dès qu'un champ indexé a réellement changé (on compare un instantané avant/après sauvegarde).
+- `IndexableMixin`, posé sur `Payment` et `Commitment`. Il coupe `search_auto_update`, ajoute un champ `needs_reindexing`, et le passe à `True` à la création ou dès qu'un champ indexé a réellement changé (on compare un instantané avant/après enregistrement).
 - `RelatedIndexableMixin`, posé sur `Contact`. Quand un champ indexé de `Contact` change (un email corrigé, par exemple), il retrouve les paiements et engagements liés et les marque comme nécessitant une réindexation.
 
 À chaque fois qu'un objet est marqué, une tâche Celery unique est planifiée 20 minutes plus tard :
@@ -120,7 +120,7 @@ def schedule_reindex_task_on_commit() -> None:
     schedule_once(task_ref=IndexableMixin.REINDEX_TASK_REF, at=at, allow_redo=True)
 ```
 
-Le point important, c'est le `if` : si une tâche est déjà planifiée dans le futur, on ne fait rien. Que le don déclenche une, deux ou trois sauvegardes dans les 20 minutes qui suivent, une seule tâche de réindexation reste programmée.
+Le point important, c'est le `if` : si une tâche est déjà planifiée dans le futur, on ne fait rien. Que le don déclenche un, deux ou trois enregistrements dans les 20 minutes qui suivent, une seule tâche de réindexation reste programmée.
 
 La tâche elle-même parcourt chaque modèle indexable, ne récupère que les lignes marquées `needs_reindexing=True`, les traite par lots via `itertools.batched`, les envoie à l'index Postgres, puis retire le marqueur seulement sur les lignes traitées :
 
@@ -144,12 +144,14 @@ def reindex() -> None:
 
 Avec ce mécanisme, un pic de plusieurs milliers de dons ne déclenche jamais plusieurs milliers de réindexations immédiates. Il déclenche une seule passe de réindexation, 20 minutes plus tard, qui traite en une fois tous les objets marqués entre-temps.
 
+20 minutes, ça peut sembler long. Mais cette recherche sert dans l'admin, à nos CSM, et les listes de paiements y sont triées du plus récent au plus ancien. Un don arrivé dans les 20 dernières minutes, pas encore indexé, apparaît de toute façon en première page, sans avoir besoin de le chercher. La recherche sert surtout à retrouver des dons plus anciens, enfouis dans les pages suivantes — et ceux-là sont indexés depuis longtemps.
+
 # En résumé
 
 Le point de départ était un problème de performance au niveau des requêtes à la base de données : des recherches lentes, sur une instance PostgreSQL partagée par toutes nos associations (chacune isolée dans son propre schéma, mais toutes sur la même instance). La réponse tient en deux mouvements, tous les deux pensés pour ne pas ajouter de charge à cette base plutôt que pour la déplacer ailleurs.
 
 Le premier, c'est déplacer le coût au bon endroit : Wagtail sait indexer, via `RelatedFields`, des champs portés par une table liée, et PostgreSQL sait ensuite les retrouver par un index plutôt que par un `Seq Scan`. On n'a eu besoin ni d'un moteur de recherche externe, ni du budget ni de l'équipe pour l'opérer.
 
-Le second, c'est ne pas remplacer un problème de lecture par un problème d'écriture : réindexer à chaque sauvegarde aurait multiplié la charge sur cette même base à chaque pic de dons. Le batching à 20 minutes ramène ce coût à une seule passe, quel que soit le nombre de sauvegardes intervenues entre-temps.
+Le second, c'est ne pas remplacer un problème de lecture par un problème d'écriture : réindexer à chaque enregistrement aurait multiplié la charge sur cette même base à chaque pic de dons. Le batching à 20 minutes ramène ce coût à une seule passe, quel que soit le nombre d'enregistrements intervenus entre-temps.
 
 Au final, la recherche est redevenue instantanée, sans service supplémentaire ni ligne de facture en plus, et sans faire porter aux autres associations le coût des pics de dons de l'une d'entre elles.
